@@ -83,13 +83,21 @@
               <b-form-row class="mb-2">
                   <b-col cols="4">
                       <label :for="'citizenship'">Гражданство</label>
-                      <b-form-select
-                          v-model="form.citizenship"
-                          :options="citizenships"
-                          :state="state.citizenship"
-                          value-field="id"
-                          text-field="nationality"
-                      ></b-form-select>
+                      <b-dropdown
+                          :text="selectedCitizenship || 'Пожалуйста выберите гражданство'">
+                          <b-dropdown-form>
+                              <b-form-input
+                                  v-model="searchText"
+                                  debounce="500"
+                                  autocomplete="off"
+                              ></b-form-input>
+                          </b-dropdown-form>
+                          <b-dropdown-divider></b-dropdown-divider>
+                          <b-dropdown-item
+                              v-for="citizenship in filteredCitizenships" :key="citizenship.id"
+                              @click="selectCitizenship(citizenship)"
+                          >{{ citizenship.nationality }}</b-dropdown-item>
+                      </b-dropdown>
                   </b-col>
               </b-form-row>
 
@@ -281,6 +289,8 @@ export default {
                 {value: false, text: 'Нет'},
             ],
             russianCitizenshipId: undefined,
+            searchText: '',
+            selectedCitizenship: undefined,
         };
     },
     created() {
@@ -294,6 +304,19 @@ export default {
         isRussianCitizenship() {
             return this.form.citizenship === this.russianCitizenshipId;
         },
+        filteredCitizenships() {
+            if (this.searchText) {
+                const filteredCitizenships = citizenships
+                    .filter(citizenship => citizenship.nationality.toLowerCase().includes(this.searchText.toLowerCase()));
+
+                if (filteredCitizenships.length) {
+                    return filteredCitizenships;
+                }
+                return [{id: null, nationality: 'Ничего не найдено'},]
+            }
+
+            return citizenships;
+        }
     },
     methods: {
         onSubmit(event) {
@@ -349,6 +372,10 @@ export default {
             }
 
             this.state.passportId = this.sixDigits(passportId)
+        },
+        selectCitizenship(citizenship) {
+            this.selectedCitizenship = citizenship.nationality;
+            this.form.citizenship = citizenship.id;
         },
         onlyCyrillic(field) {
             // Фамилия, Имя, Отчество, Предыдущая Фамилия, Предыдущее Имя
